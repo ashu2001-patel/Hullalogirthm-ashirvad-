@@ -1,0 +1,21 @@
+name,latitude,longitude,capacity,region,status
+Mumbai Distribution Hub,19.0760,72.8777,15000,west,active
+Delhi National Center,28.7041,77.1025,18000,north,active
+Bangalore Tech Hub,12.9716,77.5946,14000,south,active
+Hyderabad Logistics Park,17.3850,78.4867,12000,south,active
+Chennai Port Warehouse,13.0827,80.2707,13000,south,active
+Kolkata East Depot,22.5726,88.3639,11000,east,active
+Pune Regional Hub,18.5204,73.8567,11000,west,active
+Ahmedabad Gujarat Center,23.0225,72.5714,10000,west,active
+Jaipur Pink City Depot,26.9124,75.7873,8000,north,active
+Surat Diamond Hub,21.1702,72.8311,9000,west,active
+Lucknow UP Center,26.8467,80.9462,8500,north,active
+Nagpur Central Hub,21.1458,79.0882,9500,central,active
+Indore MP Warehouse,22.7196,75.8577,7500,central,active
+Bhopal Lake City Depot,23.2599,77.4126,7000,central,active
+Patna Bihar Center,25.5941,85.1376,6500,east,active
+Coimbatore Textile Hub,11.0168,76.9558,7000,south,active
+Kochi Backwater Depot,9.9312,76.2673,6000,south,active
+Visakhapatnam Coastal Hub,17.6868,83.2185,7500,south,active
+Guwahati Northeast Gateway,26.1445,91.7362,5500,northeast,active
+Chandigarh Tricity Center,30.7333,76.7794,8000,north,active

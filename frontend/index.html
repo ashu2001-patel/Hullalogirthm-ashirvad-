@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geospatial Delivery Coverage System</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: white;
+            border-right: 1px solid #ddd;
+            overflow-y: auto;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .sidebar header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .sidebar-content {
+            padding: 20px;
+        }
+
+        .section {
+            margin-bottom: 25px;
+        }
+
+        .section h3 {
+            color: #2c3e50;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 5px;
+        }
+
+        .warehouse-item {
+            background: #ecf0f1;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            border-left: 4px solid #3498db;
+            font-size: 13px;
+        }
+
+        .warehouse-name {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .warehouse-coords {
+            color: #7f8c8d;
+            font-size: 12px;
+            margin-top: 3px;
+        }
+
+        .warehouse-status {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            margin-top: 5px;
+            background: #27ae60;
+            color: white;
+        }
+
+        .stats {
+            background: #3498db;
+            color: white;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .stat-label {
+            font-weight: bold;
+        }
+
+        .stat-value {
+            text-align: right;
+        }
+
+        .map-container {
+            flex: 1;
+            position: relative;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .control-panel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            z-index: 1000;
+            max-width: 250px;
+        }
+
+        .control-panel h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .algorithm-selector {
+            margin-bottom: 10px;
+        }
+
+        .algorithm-selector label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            color: #2c3e50;
+            font-weight: bold;
+        }
+
+        .algorithm-selector select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        button {
+            flex: 1;
+            padding: 8px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        button.danger {
+            background: #e74c3c;
+        }
+
+        button.danger:hover {
+            background: #c0392b;
+        }
+
+        .loading {
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 12px;
+            padding: 10px;
+        }
+
+        .error {
+            background: #e74c3c;
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+
+        .success {
+            background: #27ae60;
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+
+        .legend {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+
+        .legend-item {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+            border-radius: 3px;
+            border: 1px solid #bdc3c7;
+        }
+
+        .mode-buttons {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 7px 4px;
+            background: #ecf0f1;
+            color: #2c3e50;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .mode-btn.active {
+            background: #2c3e50;
+            color: white;
+            border-color: #2c3e50;
+        }
+
+        .mode-btn:hover {
+            background: #d5dbdb;
+        }
+
+        .mode-btn.active:hover {
+            background: #34495e;
+        }
+
+        .wh-row-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .delete-btn {
+            flex: 0 0 auto;
+            width: 22px;
+            height: 22px;
+            padding: 0;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        .delete-btn:hover {
+            background: #c0392b;
+        }
+
+        .compare-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+            font-size: 11px;
+        }
+
+        .compare-table th,
+        .compare-table td {
+            border: 1px solid #ddd;
+            padding: 4px 6px;
+            text-align: center;
+        }
+
+        .compare-table th {
+            background: #2c3e50;
+            color: white;
+        }
+
+        .compare-table td:first-child {
+            text-align: left;
+            text-transform: capitalize;
+        }
+
+        .upload-label {
+            flex: 1;
+            padding: 8px;
+            background: #2980b9;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            text-align: center;
+            display: inline-block;
+        }
+
+        .upload-label:hover {
+            background: #21618c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <header>Geospatial Delivery Coverage</header>
+            <div class="sidebar-content">
+                <div class="section">
+                    <h3>Coverage Stats</h3>
+                    <div class="stats" id="stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Warehouses:</span>
+                            <span class="stat-value" id="stat-count">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Area (sq km):</span>
+                            <span class="stat-value" id="stat-area">0.00</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Perimeter (km):</span>
+                            <span class="stat-value" id="stat-perimeter">0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>Active Warehouses</h3>
+                    <div id="warehouse-list" style="max-height: 300px; overflow-y: auto;">
+                        <div class="loading">Loading warehouses...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map -->
+        <div class="map-container">
+            <div id="map"></div>
+
+            <!-- Control Panel -->
+            <div class="control-panel">
+                <div class="legend">
+                    <strong>Legend</strong>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #3498db;"></div>
+                        <span>Coverage Area</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #e74c3c;"></div>
+                        <span>Warehouse</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #f39c12;"></div>
+                        <span>Centroid</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #27ae60;"></div>
+                        <span>Deliverable point</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #c0392b;"></div>
+                        <span>Not deliverable</span>
+                    </div>
+                </div>
+
+                <h3>Mode</h3>
+                <div class="mode-buttons">
+                    <button class="mode-btn" data-mode="view" onclick="setMode('view')">View</button>
+                    <button class="mode-btn" data-mode="add" onclick="setMode('add')">+ Add</button>
+                    <button class="mode-btn" data-mode="check" onclick="setMode('check')">Check</button>
+                </div>
+
+                <h3>Algorithm</h3>
+                <div class="algorithm-selector">
+                    <select id="algorithm">
+                        <option value="monotonic_chain">Monotonic Chain</option>
+                        <option value="graham_scan">Graham Scan</option>
+                        <option value="jarvis_march">Jarvis March</option>
+                        <option value="quickhull">QuickHull</option>
+                    </select>
+                </div>
+
+                <div class="button-group">
+                    <button onclick="recalculateCoverage()">Recalculate</button>
+                    <button class="danger" onclick="clearData()">Clear All</button>
+                </div>
+
+                <div class="button-group" style="margin-top: 8px;">
+                    <button onclick="compareAlgorithms()" style="background:#16a085;">Compare Algorithms</button>
+                </div>
+
+                <h3>Bulk Data</h3>
+                <div class="button-group">
+                    <label class="upload-label" for="csv-file">Upload CSV</label>
+                    <input type="file" id="csv-file" accept=".csv,text/csv" style="display:none" onchange="handleCsvUpload(event)">
+                    <button onclick="loadRandomPoints()" style="background:#8e44ad;">Random N</button>
+                </div>
+
+                <div id="compare-result"></div>
+
+                <div id="message" style="margin-top: 10px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:8001/api/v1';
+
+        let map;
+        let coverageLayer;
+        let warehouseMarkers = [];
+        let centroidMarker;
+        let checkMarkers = [];
+        let interactionMode = 'view';
+        let hasFitBounds = false;
+
+        // Initialize map
+        function initMap() {
+            map = L.map('map').setView([12.97, 77.60], 12);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+
+            map.on('click', onMapClick);
+            loadData();
+            setMode('view');
+        }
+
+        // Set interaction mode: view | add | check
+        function setMode(mode) {
+            interactionMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(b =>
+                b.classList.toggle('active', b.dataset.mode === mode));
+            document.getElementById('map').style.cursor = (mode === 'view') ? '' : 'crosshair';
+            const hints = {
+                view: 'View mode: pan & zoom the map freely',
+                add: 'Add mode: click anywhere on the map to drop a warehouse',
+                check: 'Check mode: click any point to test if it is deliverable'
+            };
+            showMessage(hints[mode], 'success');
+        }
+
+        // Map click dispatcher
+        function onMapClick(e) {
+            const { lat, lng } = e.latlng;
+            if (interactionMode === 'add') {
+                addWarehouseAt(lat, lng);
+            } else if (interactionMode === 'check') {
+                checkDeliverability(lat, lng);
+            }
+        }
+
+        // Load data from API
+        async function loadData() {
+            try {
+                // Get warehouses
+                const warehousesRes = await fetch(`${API_BASE}/warehouses`);
+                const warehousesData = await warehousesRes.json();
+
+                displayWarehouses(warehousesData.warehouses || []);
+
+                // Get coverage
+                const algorithm = document.getElementById('algorithm').value;
+                const coverageRes = await fetch(`${API_BASE}/coverage?algorithm=${algorithm}`);
+                const coverage = await coverageRes.json();
+
+                displayCoverage(coverage);
+                updateStats(coverage);
+
+                showMessage('Data loaded successfully', 'success');
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showMessage('Error loading data: ' + error.message, 'error');
+            }
+        }
+
+        // Display warehouses on map and sidebar
+        function displayWarehouses(warehouses) {
+            // Clear existing markers
+            warehouseMarkers.forEach(marker => map.removeLayer(marker));
+            warehouseMarkers = [];
+
+            // Update sidebar
+            const list = document.getElementById('warehouse-list');
+            if (warehouses.length === 0) {
+                list.innerHTML = '<div class="loading">No warehouses</div>';
+                return;
+            }
+
+            list.innerHTML = warehouses.map(w => `
+                <div class="warehouse-item">
+                    <div class="wh-row-top">
+                        <span class="warehouse-name">${w.name}</span>
+                        <button class="delete-btn" title="Delete warehouse" onclick="deleteWarehouse('${w.id}')">&times;</button>
+                    </div>
+                    <div class="warehouse-coords">${w.latitude.toFixed(4)}, ${w.longitude.toFixed(4)}</div>
+                    <div class="warehouse-status">${w.status}</div>
+                </div>
+            `).join('');
+
+            // Add markers to map
+            warehouses.forEach(warehouse => {
+                const marker = L.circleMarker([warehouse.latitude, warehouse.longitude], {
+                    radius: 8,
+                    fillColor: '#e74c3c',
+                    color: '#c0392b',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                }).bindPopup(`<strong>${warehouse.name}</strong><br>Capacity: ${warehouse.capacity}`);
+
+                marker.addTo(map);
+                warehouseMarkers.push(marker);
+            });
+        }
+
+        // Display coverage polygon
+        function displayCoverage(coverage) {
+            // Remove existing coverage layer
+            if (coverageLayer) {
+                map.removeLayer(coverageLayer);
+            }
+            if (centroidMarker) {
+                map.removeLayer(centroidMarker);
+            }
+
+            if (!coverage.polygon || coverage.polygon.length < 3) {
+                return;
+            }
+
+            // Add coverage polygon
+            const coordinates = coverage.polygon.map(p => [p[0], p[1]]);
+            coverageLayer = L.polygon(coordinates, {
+                color: '#3498db',
+                weight: 2,
+                opacity: 0.7,
+                fillColor: '#3498db',
+                fillOpacity: 0.2
+            }).addTo(map);
+
+            // Add centroid marker
+            const centroid = coverage.centroid;
+            if (centroid && centroid[0] && centroid[1]) {
+                centroidMarker = L.circleMarker([centroid[0], centroid[1]], {
+                    radius: 6,
+                    fillColor: '#f39c12',
+                    color: '#e67e22',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                }).bindPopup('Centroid').addTo(map);
+            }
+
+            // Fit map to coverage once only (avoid fighting the user's pan/zoom on refresh)
+            if (coverageLayer && !hasFitBounds) {
+                map.fitBounds(coverageLayer.getBounds(), { padding: [50, 50] });
+                hasFitBounds = true;
+            }
+        }
+
+        // Update statistics display
+        function updateStats(coverage) {
+            document.getElementById('stat-count').textContent = coverage.warehouse_count || 0;
+            const areaKm2 = (coverage.area_sq_degrees || 0) * 111.32 * 111.32;
+            const perimeterKm = (coverage.perimeter_degrees || 0) * 111.32;
+            document.getElementById('stat-area').textContent = areaKm2.toFixed(2);
+            document.getElementById('stat-perimeter').textContent = perimeterKm.toFixed(2);
+        }
+
+        // Recalculate coverage
+        async function recalculateCoverage() {
+            try {
+                const algorithm = document.getElementById('algorithm').value;
+                const res = await fetch(`${API_BASE}/coverage/recalculate?algorithm=${algorithm}&force=true`, {
+                    method: 'POST'
+                });
+                const data = await res.json();
+                displayCoverage(data.coverage);
+                updateStats(data.coverage);
+                showMessage('Coverage recalculated', 'success');
+            } catch (error) {
+                showMessage('Error: ' + error.message, 'error');
+            }
+        }
+
+        // Clear all data
+        async function clearData() {
+            if (!confirm('Clear all warehouses?')) return;
+            try {
+                await fetch(`${API_BASE}/warehouses`, { method: 'DELETE' });
+                warehouseMarkers.forEach(m => map.removeLayer(m));
+                warehouseMarkers = [];
+                checkMarkers.forEach(m => map.removeLayer(m));
+                checkMarkers = [];
+                if (coverageLayer) map.removeLayer(coverageLayer);
+                if (centroidMarker) map.removeLayer(centroidMarker);
+                document.getElementById('warehouse-list').innerHTML = '<div class="loading">No warehouses</div>';
+                document.getElementById('compare-result').innerHTML = '';
+                updateStats({});
+                showMessage('All data cleared', 'success');
+            } catch (error) {
+                showMessage('Error: ' + error.message, 'error');
+            }
+        }
+
+        // Add a warehouse at clicked coordinates
+        async function addWarehouseAt(lat, lon) {
+            const name = prompt('Warehouse name:', 'New Hub');
+            if (!name) return;
+            const capacity = parseInt(prompt('Capacity (orders/day):', '8000'), 10) || 8000;
+            try {
+                const res = await fetch(`${API_BASE}/warehouses`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name, latitude: lat, longitude: lon,
+                        capacity, status: 'active'
+                    })
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                showMessage('Added: ' + name, 'success');
+                await loadData();
+            } catch (error) {
+                showMessage('Add failed: ' + error.message, 'error');
+            }
+        }
+
+        // Delete a single warehouse by ID
+        async function deleteWarehouse(id) {
+            try {
+                const res = await fetch(`${API_BASE}/warehouses/${id}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                showMessage('Warehouse deleted', 'success');
+                await loadData();
+            } catch (error) {
+                showMessage('Delete failed: ' + error.message, 'error');
+            }
+        }
+
+        // Check if a clicked point is inside the coverage polygon
+        async function checkDeliverability(lat, lon) {
+            try {
+                const res = await fetch(
+                    `${API_BASE}/coverage/point-in-polygon?latitude=${lat}&longitude=${lon}`,
+                    { method: 'POST' }
+                );
+                const data = await res.json();
+                const inside = data.inside_coverage;
+                const marker = L.circleMarker([lat, lon], {
+                    radius: 7,
+                    fillColor: inside ? '#27ae60' : '#c0392b',
+                    color: '#ffffff',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.9
+                }).bindPopup(inside ? 'Deliverable' : 'Not deliverable').addTo(map);
+                marker.openPopup();
+                checkMarkers.push(marker);
+                showMessage(
+                    inside ? 'Point is INSIDE coverage (deliverable)'
+                           : 'Point is OUTSIDE coverage (not deliverable)',
+                    inside ? 'success' : 'error'
+                );
+            } catch (error) {
+                showMessage('Check failed: ' + error.message, 'error');
+            }
+        }
+
+        // Compare all 4 convex hull algorithms (vertices, area, round-trip time)
+        async function compareAlgorithms() {
+            const algos = ['monotonic_chain', 'graham_scan', 'jarvis_march', 'quickhull'];
+            const rows = [];
+            for (const a of algos) {
+                const t0 = performance.now();
+                const res = await fetch(`${API_BASE}/coverage?algorithm=${a}`);
+                const cov = await res.json();
+                const t1 = performance.now();
+                const areaKm2 = (cov.area_sq_degrees || 0) * 111.32 * 111.32;
+                rows.push({
+                    a: a.replace('_', ' '),
+                    v: (cov.polygon || []).length,
+                    area: areaKm2,
+                    ms: (t1 - t0)
+                });
+            }
+            const el = document.getElementById('compare-result');
+            el.innerHTML =
+                '<table class="compare-table">' +
+                '<tr><th>Algorithm</th><th>Verts</th><th>Area km²</th><th>ms</th></tr>' +
+                rows.map(r =>
+                    `<tr><td>${r.a}</td><td>${r.v}</td><td>${r.area.toFixed(0)}</td><td>${r.ms.toFixed(1)}</td></tr>`
+                ).join('') +
+                '</table>' +
+                '<div style="font-size:11px;color:#7f8c8d;margin-top:5px;">' +
+                'All 4 should yield identical vertices &amp; area. Time is full round-trip (network + compute).</div>';
+            showMessage('Algorithm comparison complete', 'success');
+        }
+
+        // Parse CSV text into warehouse objects
+        function parseCSV(text) {
+            const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+            if (lines.length < 2) return [];
+            const header = lines[0].split(',').map(h => h.trim().toLowerCase());
+            const idx = name => header.indexOf(name);
+            const iName = idx('name'), iLat = idx('latitude'), iLon = idx('longitude');
+            const iCap = idx('capacity'), iReg = idx('region'), iStatus = idx('status');
+            if (iLat === -1 || iLon === -1) {
+                showMessage('CSV must have latitude and longitude columns', 'error');
+                return [];
+            }
+            const rows = [];
+            for (let i = 1; i < lines.length; i++) {
+                const c = lines[i].split(',');
+                const lat = parseFloat(c[iLat]);
+                const lon = parseFloat(c[iLon]);
+                if (isNaN(lat) || isNaN(lon)) continue;
+                rows.push({
+                    name: (iName !== -1 ? c[iName] : ('Warehouse-' + i)).trim() || ('Warehouse-' + i),
+                    latitude: lat,
+                    longitude: lon,
+                    capacity: iCap !== -1 ? (parseInt(c[iCap], 10) || 8000) : 8000,
+                    region: iReg !== -1 ? (c[iReg] || 'default').trim() : 'default',
+                    status: iStatus !== -1 ? (c[iStatus] || 'active').trim() : 'active'
+                });
+            }
+            return rows;
+        }
+
+        // POST many warehouses in parallel chunks
+        async function bulkPost(rows, label) {
+            if (!rows.length) {
+                showMessage('No valid rows found', 'error');
+                return;
+            }
+            let added = 0;
+            const chunk = 25;
+            for (let i = 0; i < rows.length; i += chunk) {
+                const batch = rows.slice(i, i + chunk);
+                showMessage(`${label}: ${i}/${rows.length}...`, 'success');
+                const results = await Promise.all(batch.map(w =>
+                    fetch(`${API_BASE}/warehouses`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(w)
+                    }).then(r => r.ok).catch(() => false)
+                ));
+                added += results.filter(Boolean).length;
+            }
+            hasFitBounds = false; // refit map to show all new points
+            await loadData();
+            showMessage(`${label}: added ${added}/${rows.length} warehouses`, 'success');
+        }
+
+        // Handle CSV file upload
+        async function handleCsvUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const text = await file.text();
+            const rows = parseCSV(text);
+            event.target.value = ''; // allow re-selecting same file
+            if (!rows.length) return;
+            if (!confirm(`Upload ${rows.length} warehouses from "${file.name}"?`)) return;
+            await bulkPost(rows, 'CSV upload');
+        }
+
+        // Generate N random warehouses clustered around the current map center
+        async function loadRandomPoints() {
+            const n = parseInt(prompt('How many random warehouses?', '200'), 10);
+            if (!n || n < 1) return;
+            const center = map.getCenter();
+            const spread = 0.3; // ~33km std dev region
+            const randn = () => {
+                let u = 0, v = 0;
+                while (u === 0) u = Math.random();
+                while (v === 0) v = Math.random();
+                return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+            };
+            const rows = [];
+            for (let i = 0; i < n; i++) {
+                let lat = center.lat + randn() * (spread / 3);
+                let lon = center.lng + randn() * (spread / 3);
+                lat = Math.max(-90, Math.min(90, lat));
+                lon = Math.max(-180, Math.min(180, lon));
+                rows.push({
+                    name: `Random-${(i + 1).toString().padStart(4, '0')}`,
+                    latitude: +lat.toFixed(6),
+                    longitude: +lon.toFixed(6),
+                    capacity: 3000 + Math.floor(Math.random() * 17000),
+                    region: 'generated',
+                    status: 'active'
+                });
+            }
+            await bulkPost(rows, `Random ${n}`);
+        }
+
+        // Show message
+        function showMessage(msg, type) {
+            const el = document.getElementById('message');
+            el.innerHTML = `<div class="${type}">${msg}</div>`;
+            setTimeout(() => el.innerHTML = '', 3000);
+        }
+
+        // Refresh data every 5 seconds
+        setInterval(loadData, 5000);
+
+        // Auto-load when algorithm changes
+        document.getElementById('algorithm').addEventListener('change', loadData);
+
+        // Initialize
+        window.addEventListener('load', initMap);
+    </script>
+</body>
+</html>
